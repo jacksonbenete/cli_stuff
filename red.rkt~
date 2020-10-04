@@ -1,0 +1,71 @@
+#lang racket/base
+(require racket/string)
+(require charterm)
+(require racket/list)
+(require racket/cmdline)
+
+(define (echo str)
+  (charterm-display str))
+
+(define (main)
+  (with-charterm
+    (clear)
+    (editor)))
+
+(define (clear)
+  (charterm-clear-screen)
+  (red-layout))
+
+(define (print-inverse-line start last-column)
+  (cond
+    [(< start last-column)
+     (echo " ")
+     (print-inverse-line (add1 start) last-column)]))
+
+(define (print-ruler start last-column)
+  (cond
+    [(= start 16)
+     (charterm-cursor (- start 2) 2)
+     (echo (string-append "+" (number->string (- start 8))))
+     (print-ruler (add1 start) last-column)
+     (charterm-cursor start 2)
+     (print-ruler start last-column)]
+    [(and (< start last-column) (= (remainder start 8) 0))
+     (charterm-cursor (- start 3) 2)
+     (echo (string-append "+" (number->string (- start 8))))
+     (charterm-cursor start 2)
+     (print-ruler (add1 start) last-column)]
+    [(< start last-column)
+     (echo " ")
+     (print-ruler (add1 start) last-column)]))
+
+;; (define (print-ruler-string)
+  ;; (echo "      +8     +16
+
+(define (red-layout)
+  ;; Title
+  (charterm-inverse)
+  (print-inverse-line 1 88)
+  (charterm-cursor 4 1)
+  (echo "red")
+  (charterm-cursor 10 1)
+  (echo "> ")
+  ;; (charterm-cursor 80 1)
+  ;; (echo "f")
+  (charterm-normal)
+  ;; Ruler
+  (charterm-cursor 1 2)
+  (print-ruler 1 88))
+
+(define (editor)
+  (charterm-cursor 3 3))
+
+(define (string-pad-or-truncate str width)
+  (let ((len (string-length str)))
+    (cond ((= len width) str)
+          ((< len width) (string-append str (make-string (- width len) #\space)))
+          (else (substring str 0 width)))))
+
+
+
+(main)

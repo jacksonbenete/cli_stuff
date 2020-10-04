@@ -1,0 +1,40 @@
+#lang racket/base
+(require racket/string)
+(require charterm)
+(require racket/list)
+
+(define dice-result 0)
+
+; Number -> Number
+; roll 1dy
+(define (dice y) (+ 1 (random y)))
+
+; String -> List
+; roll xdy dices and return a list of results
+(define (roll x y)
+  (define result-list '())
+  (set! result-list (map (lambda (i) (cons (dice y) result-list)) (range x)))
+  result-list)
+
+; Roll 2d6 dice.
+(define (roll-save)
+  ;; (clear)
+  (newline 1)
+  (define roll-list '())
+  (set! roll-list (roll 2 6))
+  (set! dice-result (apply + roll-list))
+  ;; (set! dice-result (+ (random 6) (random 6) 1))
+  (define res (number->string dice-result))
+  (cond
+    [(>= dice-result 10)
+     (nl (list "Result: " res))
+     (bl "Risky Save passed")]
+    [(>= dice-result 8)
+     (nl (list "Result: " res))
+     (bl "Normal Save passed")]
+    [(>= dice-result 6)
+     (nl (list "Result: " res))
+     (bl "Safety Save passed")]
+    [else (nl (list "Result: " res)) (bl "Failed Save")])
+  (menu))
+

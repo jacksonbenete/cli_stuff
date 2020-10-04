@@ -1,0 +1,120 @@
+#lang racket/base
+(require racket/string)
+(require charterm)
+(require racket/list)
+
+(define cl 1)    ;current-line
+(define dice-result 0)
+
+; String -> State
+; receive key and close the software
+(define (quit)
+  (charterm-display "q")
+  (charterm-newline)
+  (close-charterm))
+
+; String -> String
+; define a blinking string on charterm
+(define (blink line)
+  (charterm-blink)
+  (charterm-display line)
+  (charterm-normal))
+
+; String -> String
+; define a newline and print on charterm
+(define (nl line)
+  (charterm-newline)
+  (cond
+    [(or (string? line) (number? line)) (charterm-display line)]
+    [(list? line) (charterm-display (string-append* line))]))
+
+; String -> String
+; define bold string on charterm
+(define (bl line)
+  (charterm-newline)
+  (charterm-bold)
+  (charterm-display line)
+  (charterm-normal))
+
+;; (define (wrong-key)
+  ;; (nl ""))
+
+;; (defun solo-roll-2d6 ()
+  ;; "Roll 2d6 dice. Insert result on minibuffer"
+  ;; (solo-describe-roll "2d6" (+ 1 (random 6) (random 6))))
+
+; Number -> Number
+; roll 1dy
+(define (dice y) (+ 1 (random y)))
+
+; String -> List
+; roll xdy dices and return a list of results
+(define (roll x y)
+  (define result-list '())
+  (set! result-list (map (lambda (i) (cons (dice y) result-list)) (range x)))
+  result-list)
+
+; Roll 2d6 dice.
+(define (roll-save)
+  (clear)
+  (newline 1)
+  (define roll-list '())
+  (set! roll-list (roll 2 6))
+  (set! dice-result (apply + roll-list))
+  ;; (set! dice-result (+ (random 6) (random 6) 1))
+  (define res (number->string dice-result))
+  (cond
+    [(>= dice-result 10)
+     (nl (list "Result: " res))
+     (bl "Risky Save passed")]
+    [(>= dice-result 8)
+     (nl (list "Result: " res))
+     (bl "Normal Save passed")]
+    [(>= dice-result 6)
+     (nl (list "Result: " res))
+     (bl "Safety Save passed")]
+    [else (nl (list "Result: " res)) (bl "Failed Save")])
+  (menu))
+
+; Integer
+; Insert x newline on charterm
+(define (newline x)
+  (for/list ([i x]) (charterm-newline)))
+
+(define (wrong-key)
+  (clear)
+  (newline 1)
+  (nl "Wrong key, please enter a valid option or 'q' to quit.")
+  (menu))
+
+(define (msg line)
+  (clear)
+  (newline 1)
+  (nl line)
+  (menu))
+
+(define (menu)
+  (newline 2)
+    (charterm-display "[?] Please choose the function you like:")
+    (nl "[s] Save")
+    (nl "[t] Tarot")
+    (nl "Answer: ")
+    (let ((key (charterm-read-key)))
+      (cond
+        [(equal? key 'return) (clear) (menu)]
+        [(equal? key #\q) (quit)]
+        [(equal? key #\s) (roll-save)]
+        [(equal? key #\t) (msg "Tarot under construction")]
+        [else (wrong-key)])))
+
+(define (clear)
+  (charterm-clear-screen)
+  (charterm-cursor 1 1)
+  (charterm-display "Welcome to Campfire CLI"))
+
+(define (main)
+  (with-charterm
+    (clear)
+    (menu)))
+
+(main)
